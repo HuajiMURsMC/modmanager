@@ -11,10 +11,10 @@
 #include "curseforgecategoryinfo.h"
 #include "network/reply.hpp"
 
-class CurseforgeAPI : public QObject
-{
+class CurseforgeAPI : public QObject {
     Q_OBJECT
     static const QString PREFIX;
+    static const QByteArray API_KEY;
 
 public:
     enum Section { BukkitPlugin = 5/*?*/, Mod = 6, TexturePack = 12, World = 17, Modpack = 4471, Addon = 4559/*?*/, Customization = 4546/*?*/ };
