@@ -8,13 +8,11 @@
 #include "curseforgemodinfocaches.h"
 
 CurseforgeModInfo::CurseforgeModInfo(int addonId) :
-    CurseforgeModCacheInfo(addonId)
-{
+    CurseforgeModCacheInfo(addonId) {
     loadIcon();
 }
 
-CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant)
-{
+CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant) {
     CurseforgeModInfo modInfo;
 
     modInfo.basicInfo_ = true;
@@ -27,7 +25,6 @@ CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant)
     modInfo.dateModified_ = value(variant, "dateModified").toDateTime();
     modInfo.dateCreated_ = value(variant, "dateCreated").toDateTime();
     modInfo.dateReleased_ = value(variant, "dateReleased").toDateTime();
-    modInfo.popularityScore_ = value(variant, "popularityScore").toDouble();
 
     for(auto &&str : value(variant, "modLoaders").toStringList())
         modInfo.loaderTypes_ << ModLoaderType::fromString(str);
@@ -37,10 +34,10 @@ CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant)
         modInfo.authors_ << value(author, "name").toString();
 
     //thumbnail image
-    for(auto &&attachment : value(variant, "attachments").toList()){
+    for(auto &&attachment : value(variant, "attachments").toList()) {
         if(value(attachment, "isDefault").toBool())
             modInfo.iconUrl_ = value(attachment, "thumbnailUrl").toUrl();
-        else{
+        else {
             Attachment image;
             image.title = value(attachment, "title").toString();
             image.description = value(attachment, "description").toString();
@@ -59,7 +56,7 @@ CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant)
         modInfo.gameVersionLatestFiles_ << variant;
 
     //categories
-    for(auto &&variant : value(variant, "categories").toList()){
+    for(auto &&variant : value(variant, "categories").toList()) {
         auto category = CurseforgeCategoryInfo::fromVariant(variant);
         modInfo.categories_ << category;
 
@@ -72,60 +69,49 @@ CurseforgeModInfo CurseforgeModInfo::fromVariant(const QVariant &variant)
     return modInfo;
 }
 
-const QUrl &CurseforgeModInfo::websiteUrl() const
-{
+const QUrl &CurseforgeModInfo::websiteUrl() const {
     return websiteUrl_;
 }
 
-const QStringList &CurseforgeModInfo::authors() const
-{
+const QStringList &CurseforgeModInfo::authors() const {
     return authors_;
 }
 
-const QUrl &CurseforgeModInfo::iconUrl() const
-{
+const QUrl &CurseforgeModInfo::iconUrl() const {
     return iconUrl_;
 }
 
-const QString &CurseforgeModInfo::description() const
-{
+const QString &CurseforgeModInfo::description() const {
     return description_;
 }
 
-int CurseforgeModInfo::downloadCount() const
-{
+int CurseforgeModInfo::downloadCount() const {
     return downloadCount_;
 }
 
-const QList<ModLoaderType::Type> &CurseforgeModInfo::loaderTypes() const
-{
+const QList<ModLoaderType::Type> &CurseforgeModInfo::loaderTypes() const {
     return loaderTypes_;
 }
 
-bool CurseforgeModInfo::isFabricMod() const
-{
+bool CurseforgeModInfo::isFabricMod() const {
     return loaderTypes_.contains(ModLoaderType::Fabric);
 }
 
-bool CurseforgeModInfo::isForgeMod() const
-{
+bool CurseforgeModInfo::isForgeMod() const {
     return loaderTypes_.contains(ModLoaderType::Forge);
 }
 
-bool CurseforgeModInfo::isRiftMod() const
-{
+bool CurseforgeModInfo::isRiftMod() const {
     return loaderTypes_.contains(ModLoaderType::Rift);
 }
 
-const QList<CurseforgeFileInfo> &CurseforgeModInfo::latestFiles() const
-{
+const QList<CurseforgeFileInfo> &CurseforgeModInfo::latestFiles() const {
     return latestFileList_;
 }
 
-std::optional<CurseforgeFileInfo> CurseforgeModInfo::latestFileInfo(const GameVersion &version, ModLoaderType::Type &loaderType) const
-{
+std::optional<CurseforgeFileInfo> CurseforgeModInfo::latestFileInfo(const GameVersion &version, ModLoaderType::Type &loaderType) const {
     //latest last
-    for(auto iter = latestFileList_.rbegin(); iter < latestFileList_.rend(); iter++){
+    for(auto iter = latestFileList_.rbegin(); iter < latestFileList_.rend(); iter++) {
         if((version == GameVersion::Any || iter->gameVersions().contains(version)/* || iter->gameVersions().isEmpty()*/) &&
                 (loaderType == ModLoaderType::Any || iter->loaderTypes().contains(loaderType)/* || iter->loaderTypes().isEmpty()*/))
             return {*iter};
@@ -133,42 +119,34 @@ std::optional<CurseforgeFileInfo> CurseforgeModInfo::latestFileInfo(const GameVe
     return std::nullopt;
 }
 
-const QList<CurseforgeFileInfo> &CurseforgeModInfo::allFileList() const
-{
+const QList<CurseforgeFileInfo> &CurseforgeModInfo::allFileList() const {
     return allFileList_;
 }
 
-void CurseforgeModInfo::setLatestFiles(const QList<CurseforgeFileInfo> &newLatestFiles)
-{
+void CurseforgeModInfo::setLatestFiles(const QList<CurseforgeFileInfo> &newLatestFiles) {
     latestFileList_ = newLatestFiles;
 }
 
-bool CurseforgeModInfo::hasBasicInfo() const
-{
+bool CurseforgeModInfo::hasBasicInfo() const {
     return basicInfo_;
 }
 
-const QList<CurseforgeCategoryInfo> &CurseforgeModInfo::categories() const
-{
+const QList<CurseforgeCategoryInfo> &CurseforgeModInfo::categories() const {
     return categories_;
 }
 
-const QList<CurseforgeModInfo::Attachment> &CurseforgeModInfo::images() const
-{
+const QList<CurseforgeModInfo::Attachment> &CurseforgeModInfo::images() const {
     return images_;
 }
 
-const QDateTime &CurseforgeModInfo::dateModified() const
-{
+const QDateTime &CurseforgeModInfo::dateModified() const {
     return dateModified_;
 }
 
-const QDateTime &CurseforgeModInfo::dateCreated() const
-{
+const QDateTime &CurseforgeModInfo::dateCreated() const {
     return dateCreated_;
 }
 
-const QDateTime &CurseforgeModInfo::dateReleased() const
-{
+const QDateTime &CurseforgeModInfo::dateReleased() const {
     return dateReleased_;
 }

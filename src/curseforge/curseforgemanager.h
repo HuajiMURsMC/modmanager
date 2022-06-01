@@ -8,12 +8,11 @@
 
 class CurseforgeMod;
 class CurseforgeManager;
-class CurseforgeManagerModel : public QAbstractTableModel
-{
+class CurseforgeManagerModel : public QAbstractTableModel {
     Q_OBJECT
     friend class CurseforgeManager;
 public:
-    enum Column { ModColumn, NameColumn, ProjectIDColumn, SlugColumn, AuthorsColumn, CategoryColumn, WebsiteColumn, UpdateDateColumn, CreateDateColumn, ReleaseDateColumn, LoaderTypesColumn, DownloadCountColumn, PopularityScoreColumn, SummaryColumn };
+    enum Column { ModColumn, NameColumn, ProjectIDColumn, SlugColumn, AuthorsColumn, CategoryColumn, WebsiteColumn, UpdateDateColumn, CreateDateColumn, ReleaseDateColumn, LoaderTypesColumn, DownloadCountColumn, SummaryColumn };
     CurseforgeManagerModel(CurseforgeManager *manager);
 
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -28,8 +27,7 @@ private:
     int itemHeight_ = 100;
 };
 
-class CurseforgeManager : public ExploreManager
-{
+class CurseforgeManager : public ExploreManager {
     Q_OBJECT
 public:
     CurseforgeManager(QObject *parent = nullptr, CurseforgeAPI::Section sectionId = CurseforgeAPI::Mod);
@@ -60,8 +58,7 @@ private:
     void getModList() override;
 };
 
-class CurseforgeManagerProxyModel : public QSortFilterProxyModel
-{
+class CurseforgeManagerProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 public:
     CurseforgeManagerProxyModel(QObject *parent = nullptr);

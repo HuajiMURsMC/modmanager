@@ -228,6 +228,7 @@ Reply<QList<CurseforgeCategoryInfo> > CurseforgeAPI::getSectionCategories(int se
     MMLogger::network(this) << url;
     auto reply = accessManager_.get(request);
     return { reply, [=]{
+            return QList<CurseforgeCategoryInfo> {};
             //parse json
             QJsonParseError error;
             QJsonDocument jsonDocument = QJsonDocument::fromJson(reply->readAll(), &error);

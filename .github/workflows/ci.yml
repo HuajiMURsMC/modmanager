@@ -18,9 +18,7 @@ jobs:
     name: Create Pre-Release
     runs-on: ubuntu-latest
     needs:
-      - build-on-ubuntu
       - build-on-win-mingw
-      - build-on-osx
     steps:
       - uses: actions/checkout@v2
         with:
@@ -62,82 +60,12 @@ jobs:
           title: "Mod Manager Dev ${{ env.VERSION }} (${{ steps.get_short_sha.outputs.short_sha }})"
           files: |
             etc/usr/publish/**
-  build-on-ubuntu:
-    name: Build On Ubuntu
-    runs-on: ubuntu-latest # for libaria2-0 available
-    steps:
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v2.13.0
-        with:
-          version: 5.15.2
-          cached: "false"
-          modules: qtwebengine
-      - name: ubuntu install packages
-        run: |
-          sudo apt update
-          sudo apt-get install -y libglew-dev libglfw3-dev
-          sudo apt-get install -y libaria2-0-dev libquazip5-dev
-          sudo apt install -y libgl-dev libx11-dev libxkbcommon-x11-dev libxcb-util1 libxcb-image0-dev libxcb-icccm4-dev libssl-dev libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0
-          sudo apt install -y libprotobuf-dev protobuf-compiler protobuf-c-compiler libgrpc++-dev protobuf-compiler-grpc ninja-build fcitx-frontend-qt5 libcurl4-openssl-dev
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      - name: Set Env
-        run: |
-          export ARCH=x86_64
-          export RAW_VERSION=$(grep -o '".*"' src/version.h | sed 's/"//g')
-          export VERSION=$RAW_VERSION-build.$GITHUB_RUN_NUMBER
-          export RELEASE_TEXT=$(grep -Pzo "### ${VERSION}\n(\n|.)+?\n##" Changelog.md | sed '$ d')
-          echo "RAW_VERSION=${RAW_VERSION}" >> $GITHUB_ENV
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_TEXT<<EOF" >> $GITHUB_ENV
-          echo "${RELEASE_TEXT}" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-      - name: Modify version number
-        if: ${{ !startsWith(github.event.ref, 'refs/tags/') }}
-        shell: bash
-        run: |
-          sed -i "s/$RAW_VERSION/$VERSION/" src/version.h
-      - name: build ubuntu
-        run: |
-          qmake
-          make
-      - name: package
-        run: |
-          make INSTALL_ROOT=AppDir -j2 install ; find AppDir/
-          wget -c -nv https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
-          chmod +x appimagetool-*.AppImage
-          sudo mkdir -p /home/qt/work/install
-          sudo ln -s $QT_PLUGIN_PATH /home/qt/work/install/plugins
-          ./appimagetool-*.AppImage -s deploy AppDir/usr/share/applications/*.desktop
-          ./appimagetool-*.AppImage AppDir
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ModManager-${{ env.VERSION }}-x86_64.AppImage
-          path: Mod_Manager*.AppImage
-      - name: uploadRelease
-        if: startsWith(github.event.ref, 'refs/tags/')
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: Mod_Manager-${{ env.VERSION }}-x86_64.AppImage
-          asset_name: ModManager-${{ env.VERSION }}-x86_64.AppImage
-          tag: ${{ github.ref }}
-          body: ${{ env.RELEASE_TEXT }}
-          overwrite: true
   build-on-win-mingw:
     name: Build On Windows Mingw
     runs-on: windows-latest
     strategy:
       matrix:
         include:
-          - qt_arch: win32_mingw81
-            qt_ver: 5.15.2
-            qt_tools: "tools_mingw,8.1.0-1-202004170606,qt.tools.win32_mingw810"
-            qt_tools_mingw_install: mingw810_32
-            mingw_arch: mingw32
-            msys_arch: i686
-            x64_suffix:
           - qt_arch: win64_mingw81
             qt_ver: 5.15.2
             qt_tools: "tools_mingw,8.1.0-1-202004170606,qt.tools.win64_mingw810"
@@ -191,7 +119,7 @@ jobs:
         run: |
           qmake
           mingw32-make.exe qmake_all
-          mingw32-make.exe
+          mingw32-make.exe debug
       - name: list msys dll
         shell: pwsh
         run : |
@@ -247,176 +175,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: package/ModManager-Installer.exe
           asset_name: ModManager-${{ env.VERSION }}${{ matrix.x64_suffix }}-Installer.exe
-          tag: ${{ github.ref }}
-          overwrite: true
-  # enable them if find a way to build libaria2
-  #build-on-win-msvc:
-    #name: Build On Windows MSVC
-    #runs-on: windows-latest
-    #strategy:
-      #matrix:
-        #include:
-          #- qt_ver: 5.15.2
-          #qt_arch: win32_msvc2019
-          #msvc_arch: x86
-          #qt_arch_install: msvc2019
-          #openssl_url: "https://github.com/kaniol-lck/openssl1.1.1-prebuilt/releases/download/1.1.1l/openssl-1.1.1l-win32.zip"
-          #- qt_ver: 5.15.2
-            #qt_arch: win64_msvc2019_64
-            #msvc_arch: x64
-            #qt_arch_install: msvc2019_64
-            #openssl_url: "https://github.com/kaniol-lck/openssl1.1.1-prebuilt/releases/download/1.1.1l/openssl-1.1.1l-win64.zip"
-    #steps:
-      #- name: Install Qt
-        #uses: jurplel/install-qt-action@v2.13.0
-        #with:
-          #version: ${{ matrix.qt_ver }}
-          #arch: ${{ matrix.qt_arch }}
-          #tools: ${{ matrix.qt_tools }}
-          #cached: "false"
-      #- uses: actions/checkout@v2
-        #with:
-          #fetch-depth: 1
-          #submodules: recursive
-      #- name: Install zlib 32
-        #if: contains(matrix.qt_arch, 'win32_msvc')
-        #shell: pwsh
-        #run: |
-          #set ARCH=Win32
-          #Invoke-WebRequest -Uri https://git.io/JnHTY -OutFile install_zlib.bat
-          #./install_zlib.bat
-          #del install_zlib.bat
-      #- name: Install zlib
-        #if: contains(matrix.qt_arch, 'win64_msvc')
-        #shell: pwsh
-        #run: |
-          #Invoke-WebRequest -Uri https://git.io/JnHTY -OutFile install_zlib.bat
-          #./install_zlib.bat
-          #del install_zlib.bat
-      #- name: Test zlib
-        #shell: cmd
-        #run: |
-          #if NOT exist "%PROGRAMFILES%"\zlib\lib\zlib.lib exit 1
-          #if NOT exist "%PROGRAMFILES%"\zlib\bin\zlib.dll exit 1
-          #if NOT exist "%PROGRAMFILES%"\zlib\include\zconf.h exit 1
-          #if NOT exist "%PROGRAMFILES%"\zlib\include\zlib.h exit 1
-          #if NOT exist "%PROGRAMFILES%"\zlib\lib\zlib.lib exit 1
-      #- name: Install aria2
-        #shell: powershell
-        #run: |
-          #C:/msys64/usr/bin/pacman -S mingw-w64-x86_64-aria2 --noconfirm
-      #- name: msvc-build
-        #id: build
-        #shell: cmd
-        #run: |
-          #call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" ${{ matrix.msvc_arch }}
-          #qmake
-          #nmake
-          #echo winSdkDir=%WindowsSdkDir% >> %GITHUB_ENV%
-          #echo winSdkVer=%WindowsSdkVersion% >> %GITHUB_ENV%
-          #echo vcToolsInstallDir=%VCToolsInstallDir% >> %GITHUB_ENV%
-          #echo vcToolsRedistDir=%VCToolsRedistDir% >> %GITHUB_ENV%
-      #- name: Perpare package
-        #shell: pwsh
-        #run: |
-          #mkdir deploy && mv release/${{github.event.repository.name}}.exe deploy
-          #$client = new-object System.Net.WebClient
-          #$client.DownloadFile('${{ matrix.openssl_url }}', 'openssl-bin.zip')
-          #Expand-Archive -Path openssl-bin.zip -DestinationPath openssl
-          #cp openssl/*.dll deploy/
-          #cp C:/msys64/mingw64/bin/libaria2-0.dll deploy/
-          #cp LICENSE* deploy/
-          #cp *md deploy/
-      #- name: Copy zlib 32
-        #if: contains(matrix.qt_arch, 'win32_msvc')
-        #shell: pwsh
-        #run: |
-          #cp "C:/Program Files (x86)/zlib/bin/zlib.dll" deploy/
-      #- name: Copy zlib
-        #if: contains(matrix.qt_arch, 'win64_msvc')
-        #shell: pwsh
-        #run: |
-          #cp "C:/Program Files/zlib/bin/zlib.dll" deploy/
-      #- name: package
-        #id: package
-        #shell: pwsh
-        #run: |
-          #windeployqt.exe --no-translations --no-opengl-sw --no-system-d3d-compiler --no-angle --no-quick-import --qmldir "${{ env.Qt5_DIR }}/qml" deploy/${{github.event.repository.name}}.exe
-      #- uses: actions/upload-artifact@v2
-        #with:
-          #name: ${{github.event.repository.name}}-${{ matrix.qt_arch }}
-          #path: ${{github.workspace}}/deploy/
-      #- name: Create zip
-        #id: createzip
-        #shell: pwsh
-        #run: |
-          #Compress-Archive -LiteralPath ${{github.workspace}}/deploy -DestinationPath ${{github.workspace}}/${{github.event.repository.name}}-${{ matrix.qt_arch }}.zip
-      #- name: Upload Release
-        #if: startsWith(github.event.ref, 'refs/tags/')
-        #uses: svenstaro/upload-release-action@v2
-        #with:
-          #repo_token: ${{ secrets.GITHUB_TOKEN }}
-          #file: ${{github.workspace}}/${{github.event.repository.name}}-${{ matrix.qt_arch }}.zip
-          #asset_name: ${{github.event.repository.name}}-${{ matrix.qt_arch }}.zip
-          #tag: ${{ github.ref }}
-          #overwrite: true
-  build-on-osx:
-    name: Build On OSX
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-10.15]
-        qt_ver: [5.15.2]
-        qt_arch: [clang_64]
-    steps:
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v2.13.0
-        with:
-          version: ${{ matrix.qt_ver }}
-          cached: "false"
-      - name: Install libaria2
-        run: |
-          wget "https://github.com/kaniol-lck/aria2/releases/download/libaria2-release-1.36.0/libaria2-clang-macos-10.15.zip"
-          unzip *.zip
-          sudo cp -r lib/* /usr/local/lib/
-          sudo cp -r include/ /usr/local/include
-          rm -rf lib/ include/ *.zip
-      - name: Install dependencies
-        run: |
-          brew install quazip gnu-sed
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-      - name: Set Env
-        shell: bash
-        run: |
-          export RAW_VERSION=$(grep -o '".*"' src/version.h | sed 's/"//g')
-          export VERSION=$RAW_VERSION-build.$GITHUB_RUN_NUMBER
-          echo "RAW_VERSION=${RAW_VERSION}" >> $GITHUB_ENV
-          echo "VERSION=${VERSION}" >> $GITHUB_ENV
-      - name: Modify version number
-        if: ${{ !startsWith(github.event.ref, 'refs/tags/') }}
-        shell: bash
-        run: |
-          gsed -i "s/$RAW_VERSION/$VERSION/" src/version.h
-      - name: build macos
-        run: |
-          qmake
-          make
-      - name: package
-        run: |
-          macdeployqt modmanager.app -qmldir=. -verbose=1 -dmg
-        shell: sh
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ModManager-${{ env.VERSION }}.dmg
-          path: modmanager.dmg
-      - name: uploadRelease
-        if: startsWith(github.event.ref, 'refs/tags/')
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: modmanager.dmg
-          asset_name: ModManager-${{ env.VERSION }}.dmg
           tag: ${{ github.ref }}
           overwrite: true
